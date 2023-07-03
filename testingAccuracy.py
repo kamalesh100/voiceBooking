@@ -1,25 +1,45 @@
+import os
+import re
 import spacy
-from spacy.training import Example
+from spacy.training.example import offsets_to_biluo_tags
+import importlib.util
 
-# Load the trained model
-nlp = spacy.load("model_10k")
+def sort_model_dirs(dir_name):
+    match = re.search(r'model_(\d+)', dir_name)
+    if match is not None:
+        return int(match.group(1))
+    else:
+        return 0
 
-# Test data: Replace with your own data.
-# TEST_DATA = [
-# ("I'd like to travel from Leeds to Oxford with 4 friends on August 12th.", {'entities': [(24, 29, 'Origin'), (33, 39, 'Destination'), (45, 46, 'Passenger'), (58, 69, 'Date')]}), ('Please book a trip from Leeds to Cambridge for 6 passengers on July 16.', {'entities': [(24, 29, 'Origin'), (33, 42, 'Destination'), (47, 48, 'Passenger'), (63, 70, 'Date')]}),
-# ]
-from dataset import TRAIN_DATA
+model_dirs = os.listdir("models")
+model_dirs.sort(key=sort_model_dirs)
+latest_model_dir = model_dirs[-1]
+nlp = spacy.load(f"models/{latest_model_dir}")
 
-examples = []
-for text, annots in TRAIN_DATA:
-    doc = nlp.make_doc(text)
-    example = Example.from_dict(doc, annots)
-    examples.append(example)
+# Load the testing data
+spec = importlib.util.spec_from_file_location("module.name", "testing_data/data_1m_10.py")
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
+TEST_DATA = module.TEST_DATA
 
-scores = nlp.evaluate(examples)
+correct_predictions = 0
+total_predictions = 0
 
-# The scores object includes several metrics. Print them all.
-print("Precision", scores["ents_p"])
-print("Recall", scores["ents_r"])
-print("F-score", scores["ents_f"])
-print("Per-Entity", scores["ents_per_type"])
+# Iterate over the testing data
+for text, annotations in TEST_DATA:
+    doc = nlp(text)
+    true_entities = annotations['entities']
+
+    # Convert the entities to the BILOU tagging scheme
+    true_biluo = offsets_to_biluo_tags(doc, true_entities)
+    pred_biluo = [token.ent_iob_ + '-' + token.ent_type_ if token.ent_iob_ != 'O' else 'O' for token in doc]
+
+    # Compare the predicted entities with the true entities
+    for true, pred in zip(true_biluo, pred_biluo):
+        if true == pred:
+            correct_predictions += 1
+        total_predictions += 1
+
+# Calculate the accuracy
+accuracy = correct_predictions / total_predictions
+print('Testing accuracy:', accuracy)

@@ -1,9 +1,9 @@
 import random
 import os
 from datetime import datetime, timedelta
-from data_stations import STATIONS
-from data_command_templates import COMMANDS
-from data_passenger_label import PASSENGERS_SINGULAR, PASSENGERS_PLURAL
+from data.data_stations import STATIONS
+from data.data_command_templates import COMMANDS
+from data.data_passenger_label import PASSENGERS_SINGULAR, PASSENGERS_PLURAL
 
 # Define lists of possible values
 origins = STATIONS
@@ -55,7 +55,7 @@ if not os.path.exists('training_data'):
 for dataset_num in range(1, 11):
   # Generate data
   data = []
-  for i in range(100):
+  for i in range(1000000):
       origin = random.choice(origins)
       destination = random.choice(destinations)
       while destination == origin:  # Make sure destination is not the same as origin

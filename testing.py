@@ -1,8 +1,9 @@
 import os
 import re
 import spacy
+import importlib.util
+import json
 
-# Function to sort model directories by the integer in their names
 def sort_model_dirs(dir_name):
     match = re.search(r'model_(\d+)', dir_name)
     if match is not None:
@@ -10,24 +11,35 @@ def sort_model_dirs(dir_name):
     else:
         return 0  # Default to 0 if no match
 
-# Get the list of model directories
 model_dirs = os.listdir("models")
-
-# Sort the model directories
 model_dirs.sort(key=sort_model_dirs)
-
-# Get the directory of the latest model
 latest_model_dir = model_dirs[-1]
-
-# Load the latest model
 nlp = spacy.load(f"models/{latest_model_dir}")
 
-# Test text
-test_text = "Book tickets to london from leeds on 23rd June for 2 people."
+# Define the directory for the testing data and the files
+TEST_DATA_DIR = "testing_data/"
+TEST_DATA_FILES = [f"{TEST_DATA_DIR}data_1m_{i+1}.py" for i in range(10)]
 
-# Process the text
-doc = nlp(test_text)
+# List to hold the results
+results = []
 
-# Print the entities
-for ent in doc.ents:
-    print(ent.label_, ": ", ent.text, "[", ent.start_char, ",", ent.end_char, "]")
+for file_path in TEST_DATA_FILES:
+    # Load this chunk of testing data
+    spec = importlib.util.spec_from_file_location("module.name", file_path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    TEST_DATA = module.TEST_DATA
+
+    for text, _ in TEST_DATA:
+        doc = nlp(text)
+        # Dictionary to hold the results for this input
+        result = {"input": text, "entities": []}
+        # Add the entities to the dictionary
+        for ent in doc.ents:
+            result["entities"].append({"label": ent.label_, "text": ent.text, "start": ent.start_char, "end": ent.end_char})
+        # Add the dictionary to the results list
+        results.append(result)
+
+# Write the results to the file
+with open('testingResult.py', 'w') as f:
+    f.write(json.dumps(results, indent=2))
