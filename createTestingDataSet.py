@@ -55,7 +55,7 @@ if not os.path.exists('testing_data'):
 for dataset_num in range(1, 11):
   # Generate data
   data = []
-  for i in range(1000000):
+  for i in range(100):
       origin = random.choice(origins)
       destination = random.choice(destinations)
       while destination == origin:  # Make sure destination is not the same as origin
