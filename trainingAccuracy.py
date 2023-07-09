@@ -7,16 +7,16 @@ import importlib.util
 nlp = spacy.load("models/model")
 
 # Load the testing data
-spec = importlib.util.spec_from_file_location("module.name", "testing_data/data.py")
+spec = importlib.util.spec_from_file_location("module.name", "training_data/data.py")
 module = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(module)
-TEST_DATA = module.TEST_DATA
+TRAIN_DATA = module.TRAIN_DATA
 
 correct_predictions = 0
 total_predictions = 0
 
 # Iterate over the testing data
-for text, annotations in TEST_DATA:
+for text, annotations in TRAIN_DATA:
     doc = nlp(text)
     true_entities = annotations["entities"]
 
@@ -35,4 +35,4 @@ for text, annotations in TEST_DATA:
 
 # Calculate the accuracy
 accuracy = correct_predictions / total_predictions
-print("Testing accuracy:", accuracy)
+print("Training accuracy:", accuracy)
